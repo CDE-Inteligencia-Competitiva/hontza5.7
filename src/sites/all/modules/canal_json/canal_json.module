@@ -1,0 +1,1572 @@
+<?php
+require_once('canal_json.extractor.inc.php');
+function canal_json_perm() {
+  return array();
+}
+function canal_json_menu() {
+  $items=array();
+  $items['canal_json/crear']=array(
+    'title'=>'Import Json',
+    'page arguments'=>array('canal_json_crear_form'),  
+    'page callback' => 'drupal_get_form',
+    'access callback' => 'canal_json_crear_access',
+  );
+  $items['canal_json/crear/previsualizar']=array(
+    'title'=>'Import Json',
+    //'page arguments'=>array('canal_json_crear_previsualizar_form'),  
+    //'page callback' => 'drupal_get_form',
+    'page callback' => 'canal_json_crear_previsualizar_callback',
+    'access callback' => 'canal_json_crear_access',
+  );
+  $items['canal_json/crear_csv']=array(
+    'title'=>'Import Json',
+    'page arguments'=>array('canal_json_crear_form'),  
+    'page callback' => 'drupal_get_form',
+    'access callback' => 'canal_json_crear_access',
+  );
+  $items['canal_json/google_sheet']=array(
+    'title'=>'Import from Google sheet',
+    'page arguments'=>array('canal_json_google_crear_form'),  
+    'page callback' => 'drupal_get_form',
+    'access callback' => 'canal_json_crear_access',
+  );
+   $items['canal_json/xml']=array(
+    'title'=>'Import from xml',
+    'page arguments'=>array('canal_json_xml_crear_form'),  
+    'page callback' => 'drupal_get_form',
+    'access callback' => 'canal_json_crear_access',
+  );
+  $items['canal_json/crear/previsualizar_csv']=array(
+    'title'=>'Import Json',
+    //'page arguments'=>array('canal_json_crear_previsualizar_form'),  
+    //'page callback' => 'drupal_get_form',
+    'page callback' => 'canal_json_crear_previsualizar_callback',
+    'access callback' => 'canal_json_crear_access',
+  );
+  $items['canal_json/filtrorss']=array(
+    'title'=>'FILTER RSS',
+    'page arguments'=>array('canal_json_filtrorss_crear_form'),  
+    'page callback' => 'drupal_get_form',
+    'access callback' => 'canal_json_crear_access',
+  );
+
+  return $items;
+}
+function return_help_rss(){
+    $helpa=help_popup_window(15815, 'help',my_get_help_link_object());
+    return $helpa;
+}
+function canal_json_xml_crear_form(){
+  $title=t('XML');
+  $type=arg(1);
+  $url_type='json';
+ /* $form['xml_link']=array(
+       '#type'=>'textarea',
+       '#title'=>t('Link from xml source'),
+       '#required'=>TRUE,
+  );
+ */
+  $form['import_btn']=array(
+       '#type'=>'submit',
+       '#value'=>t('Next'),
+  );
+  return $form;
+}
+
+function canal_json_xml_crear_form_submit($form, &$form_state){
+if($form_state['values']['xml_link']){
+     // $xml_link=trim($form_state['values']['xml_link']);
+      $xml_link = '/home/joseba/listado-exportacion.xml';
+      }
+
+      canal_json_xml_obtener_form($xml_link);
+     // return $sheet_id;
+}
+
+function canal_json_xml_obtener_form($xml_link){
+   global $base_url,$language,$id,$orria;
+
+   //$url_type=='json';
+   $url_type=='XML';
+
+
+ 
+  $url = 'http://localhost/hontza/google_sheet/listado-exportacion.xml';
+
+
+
+//$context  = stream_context_create(array('http' => array('header' => 'Accept: application/xml')));
+
+
+//$xml = file_get_contents($url, false, $context);
+//$xml = simplexml_load_string($xml);
+
+//$feeds=file_get_contents($url);
+$xml=simplexml_load_file($url);
+//$xml=simplexml_load_string($feeds);
+ 
+  $json_sortzeko=array();
+  $json_fields=array();
+  $i='0';
+
+ foreach($xml->channel->item as $item) {
+    $json_sortzeko[$i]['title'] =(string) $item->title;
+    $json_sortzeko[$i]['link']=(string) $item->link;
+    $json_sortzeko[$i]['description']=(string) $item->description." [".$item->date."]  "."  [".$item->tags->tag->title."]";
+    $json_sortzeko[$i]['date']=(string) $item->date;
+    $json_sortzeko[$i]['url_json']=$url;
+    $i++;
+    }
+
+    
+
+
+      $fitxero='google_sheet/xml_prueba.json';//hau tenporala izango da. 
+      $bidaltzeko=json_encode($json_sortzeko);
+      file_put_contents($fitxero, $bidaltzeko);
+      //$url='http://192.169.1.17/hontza/google_sheet/id_'.$id.'_'.$orria.'.json';
+      $url='http://localhost/hontza/google_sheet/xml_prueba.json';
+      
+      $json_fields['title'] ='title';
+      $json_fields['link']='link';
+      $json_fields['description']='description';
+      $json_fields['date']='date';
+      $json_fields['url_json']=$url;
+
+       $my_grupo=og_get_group_context();
+       if(!empty($my_grupo) && isset($my_grupo->nid)){
+           $grupo_link=$my_grupo->purl;
+       }
+
+       $url_json=base64_encode(json_encode($json_fields));
+
+       $my_lang='/es';
+       if($language->language!='en'){
+           $my_lang='/'.$language->language;
+       }
+       $url=url($base_url.$my_lang.'/'.$grupo_link.'/crear/canal-yql',array('query'=>'simple=1&url_json='.$url_json));   
+  
+       drupal_goto($url);
+}
+
+function canal_json_google_crear_form(){
+  $title=t('sheet id');
+  $type=arg(1);
+  $url_type='json';
+  $form['sheet_id']=array(
+       '#type'=>'textarea',
+       '#title'=>t('Google sheet ID'),
+       '#required'=>TRUE,
+  );
+  $form['num_hoja']=array(
+       '#type'=>'textfield',
+       '#title'=>t('Sheet number'),
+       '#required'=>TRUE,
+  );
+  $form['import_btn']=array(
+       '#type'=>'submit',
+       '#value'=>t('Next'),
+  );
+  return $form;
+}
+
+function canal_json_google_crear_form_submit($form, &$form_state){
+if($form_state['values']['sheet_id']){
+      $sheet_id=trim($form_state['values']['sheet_id']);
+      $num_hoja=trim($form_state['values']['num_hoja']);
+      }
+
+      canal_json_google_obtener_form($sheet_id,$num_hoja);
+     // return $sheet_id;
+}
+
+function canal_json_google_obtener_form($sheet_id, $num_hoja){
+   global $base_url,$language,$id,$orria;
+
+   //$url_type=='json';
+   $url_type=='Google sheet';
+
+
+   $id=$sheet_id;
+   $orria=$num_hoja;
+ 
+  $url = 'https://spreadsheets.google.com/feeds/list/'.$id.'/'.$orria.'/public/values?alt=json';
+
+  //'https://spreadsheets.google.com/feeds/list/12M7Ev9T-gDW7XiyAUEAQ5fMrhUw8f-ADWfNWUKHBohk/3/public/values?alt=json';
+
+
+  $file= file_get_contents($url);
+  $json = json_decode($file);
+  $rows = $json->{'feed'}->{'entry'};
+  $json_sortzeko=array();
+  $json_fields=array();
+  $i='0';
+
+ foreach($rows as $row) {
+    $json_sortzeko[$i]['title'] =$row->{'gsx$title'}->{'$t'};
+    $json_sortzeko[$i]['link']=$row->{'gsx$link'}->{'$t'};
+    $json_sortzeko[$i]['description']=$row->{'gsx$description'}->{'$t'};
+    $json_sortzeko[$i]['url_json']=$url;
+    $i++;
+    }
+
+      //cron-erako artxiboa sortzeko
+     
+      $croneako=file_get_contents("http://localhost/hontza/google_sheet/croneako.json");
+      $cronerako=json_decode($croneako,true);
+      $a=count($cronerako);
+      $a=$a+1;
+      $cronerako[$a]=array($id, $orria);
+      $grabatzeko=json_encode($cronerako);
+      file_put_contents('google_sheet/croneako.json', $grabatzeko);
+      ///////////////////////////////////////7
+
+
+      $fitxero='google_sheet/id_'.$id.'_'.$orria.'.json';
+      $bidaltzeko=json_encode($json_sortzeko);
+      file_put_contents($fitxero, $bidaltzeko);
+      //$url='http://192.169.1.17/hontza/google_sheet/id_'.$id.'_'.$orria.'.json';
+      $url='http://localhost/hontza/google_sheet/id_'.$id.'_'.$orria.'.json';
+      
+      $json_fields['title'] ='title';
+      $json_fields['link']='link';
+      $json_fields['description']='description';
+      $json_fields['url_json']=$url;
+
+       $my_grupo=og_get_group_context();
+       if(!empty($my_grupo) && isset($my_grupo->nid)){
+           $grupo_link=$my_grupo->purl;
+       }
+
+       $url_json=base64_encode(json_encode($json_fields));
+
+       $my_lang='/es';
+       if($language->language!='en'){
+           $my_lang='/'.$language->language;
+       }
+       $url=url($base_url.$my_lang.'/'.$grupo_link.'/crear/canal-yql',array('query'=>'simple=1&url_json='.$url_json));   
+  
+       drupal_goto($url);
+}
+
+function canal_json_filtrorss_crear_form(){
+    $title=t('Filter RSS');    
+    $andcollapsed=TRUE;
+    $orcollapsed=TRUE;
+    $notcollapsed=TRUE;
+    if(isset($_GET['url'])){
+      $urlcod=$_GET['url'];
+      $url=base64_decode($urlcod);
+    }else{
+      $url='';
+    }
+    if(isset($_GET['arg1title'])){
+      $arg1title=$_GET['arg1title'];
+      $andcollapsed=FALSE;
+    }else{
+      $arg1title='';
+    }
+    if(isset($_GET['arg1description'])){
+      $arg1description=$_GET['arg1description'];
+      $andcollapsed=FALSE;
+    }else{
+      $arg1description='';
+    }
+    if(isset($_GET['arg1link'])){
+      $arg1link=$_GET['arg1link'];
+      $andcollapsed=FALSE;
+    }else{
+      $arg1link='';
+    }
+    if(isset($_GET['arg2title'])){
+      $arg2title=$_GET['arg2title'];
+      $andcollapsed=FALSE;
+    }else{
+      $arg2title='';
+    }
+    if(isset($_GET['arg2description'])){
+      $arg2description=$_GET['arg2description'];
+      $andcollapsed=FALSE;
+    }else{
+      $arg2description='';
+    }
+    if(isset($_GET['arg2link'])){
+      $arg2link=$_GET['arg2link'];
+      $andcollapsed=FALSE;
+    }else{
+      $arg2link='';
+    }
+    if(isset($_GET['arg3title'])){
+      $arg3title=$_GET['arg3title'];
+      $andcollapsed=FALSE;
+    }else{
+      $arg3title='';
+    }
+    if(isset($_GET['arg3description'])){
+      $arg3description=$_GET['arg3description'];
+      $andcollapsed=FALSE;
+    }else{
+      $arg3description='';
+    }
+    if(isset($_GET['arg3link'])){
+      $arg3link=$_GET['arg3link'];
+      $andcollapsed=FALSE;
+    }else{
+      $arg3link='';
+    }
+    if(isset($_GET['ortitle'])){
+      $ortitle=$_GET['ortitle'];
+      $orcollapsed=FALSE;
+    }else{
+      $ortitle='';
+    }
+    if(isset($_GET['ordescription'])){
+      $ordescription=$_GET['ordescription'];
+      $orcollapsed=FALSE;
+    }else{
+      $ordescription='';
+    }
+    if(isset($_GET['orlink'])){
+      $orlink=$_GET['orlink'];
+      $orcollapsed=FALSE;
+    }else{
+      $orlink='';
+    }
+    if(isset($_GET['nottitle'])){
+      $nottitle=$_GET['nottitle'];
+      $notcollapsed=FALSE;
+    }else{
+      $nottitle='';
+    }
+    if(isset($_GET['notdescription'])){
+      $notdescription=$_GET['notdescription'];
+      $notcollapsed=FALSE;
+    }else{
+      $notdescription='';
+    }
+    if(isset($_GET['notlink'])){
+      $notlink=$_GET['notlink'];
+      $notcollapsed=FALSE;
+    }else{
+      $notlink='';
+    }
+
+
+
+    //$title=help_popup_window(12731, 'help',my_get_help_link_object());
+
+  /*  $form['help1'] = [
+      '#type' => 'item',
+      '#description'=>help_popup_window(12731, 'help',my_get_help_link_object()),
+      '#markup' => t('Block content'),
+    ];*/ 
+
+    $form['helpa'] = [
+      '#type' => 'item',
+      '#description'=>help_popup_window(15815, 'help',my_get_help_link_object()),
+      '#markup' => t('Block content'),
+    ];
+
+
+    $form['help'] = [
+      '#type' => 'item',
+      '#description'=>'<img src="'.$base_url.'/hontza/sites/default/files/FILTRO-rss-5.png" width="100%" align="center"/>',
+      '#markup' => t('Block content'),
+    ];
+
+    $form['url']=array(
+        '#type'=>'textarea',
+        '#title'=>t('List of RSS to filter (url)'),
+        '#description' => t('RSS separated by ","'),
+        '#required'=>TRUE,
+        '#attributes'=>array(
+          'style'=>'resize: none;'
+          ),
+        '#default_value'=>$url,
+    );
+    $form['and']=array(
+        '#type'=>'fieldset',
+       '#title'=>t('Filter'),
+        '#description' => t('Both the terms and the text boxes are combined with OR.</BR></BR>
+        The red blocks are combined with AND.</BR></BR>'),
+               '#attributes' => array(
+          'style'=>'border: 2px solid black;
+            -moz-border-radius:8px;
+            -webkit-border-radius:8px;  
+            border-radius:8px;  
+                    '
+          ),
+        '#collapsible' => True,
+        '#collapsed' => $andcollapsed,
+    );
+    $form['and']['arg1']=array(
+        '#type'=>'fieldset',
+        '#title'=>'',
+        '#attributes' => array(
+          'style'=>'width: 190px;
+                    float: left;
+                    padding: 5px;
+                    border: 2px solid #AE1200;
+                    -moz-border-radius:8px;
+                    -webkit-border-radius:8px;  
+                    border-radius:8px;
+                    '
+          ),
+      );
+    $form['and']['arg1']['arg1title']=array(
+        '#type'=>'textarea',
+        '#title'=>t('Title'),
+        '#description' =>t('Terms separated by ","'),
+        '#rows'=>"1",
+        '#attributes'=>array(
+          'style'=>'resize: none;'
+          ),
+        '#default_value'=>$arg1title,
+      );
+    $form['and']['arg1']['arg1description']=array(
+        '#type'=>'textarea',
+        '#title'=>t('Description'),
+        '#description' =>t('Terms separated by ","'),
+        '#rows'=>"1",
+        '#attributes'=>array(
+          'style'=>'resize: none;'
+          ),
+        '#default_value'=>$arg1description,
+      );
+    $form['and']['arg1']['arg1link']=array(
+        '#type'=>'textarea',
+        '#title'=>t('Link'),
+        '#description' =>t('Terms separated by ","'),
+        '#rows'=>"1",
+        '#attributes'=>array(
+          'style'=>'resize: none;'
+          ),
+        '#default_value'=>$arg1link,
+      );
+
+    $form['and']['arg2']=array(
+        '#type'=>'fieldset',
+        '#title'=>'',
+        '#attributes' => array(
+          'style'=>'width: 190px;
+                    display: inline-block;
+                    float: left;
+                    padding: 5px;
+                    border: 2px solid #AE1200;
+            -moz-border-radius:8px;
+            -webkit-border-radius:8px;  
+            border-radius:8px;
+                    '
+          ),
+      );
+    $form['and']['arg2']['arg2title']=array(
+        '#type'=>'textarea',
+        '#title'=>t('Title'),
+        '#description' =>t('Terms separated by ","'),
+        '#rows'=>"1",
+        '#attributes'=>array(
+          'style'=>'resize: none;'
+          ),
+        '#default_value'=>$arg2title,
+      );
+    $form['and']['arg2']['arg2description']=array(
+        '#type'=>'textarea',
+        '#title'=>t('Description'),
+        '#description' =>t('Terms separated by ","'),
+        '#rows'=>"1",
+        '#attributes'=>array(
+          'style'=>'resize: none;'
+          ),
+        '#default_value'=>$arg2description,
+      );
+    $form['and']['arg2']['arg2link']=array(
+        '#type'=>'textarea',
+        '#title'=>t('Link'),
+        '#description' =>t('Terms separated by ","'),
+        '#rows'=>"1",
+        '#attributes'=>array(
+          'style'=>'resize: none;'
+          ),
+        '#default_value'=>$arg2link,
+      );
+
+    $form['and']['arg3']=array(
+        '#type'=>'fieldset',
+        '#title'=>'',
+        '#attributes' => array(
+          'style'=>'width: 190px;
+                    display: inline-block;
+                    float: left;
+                    padding: 5px;
+                    border: 2px solid #AE1200;
+            -moz-border-radius:8px;
+            -webkit-border-radius:8px;  
+            border-radius:8px;
+                    '
+          ),
+      );
+    $form['and']['arg3']['arg3title']=array(
+        '#type'=>'textarea',
+        '#title'=>t('Title'),
+        '#description' =>t('Terms separated by ","'),
+        '#rows'=>"1",
+        '#attributes'=>array(
+          'style'=>'resize: none;'
+          ),
+        '#default_value'=>$arg3title,
+      );
+    $form['and']['arg3']['arg3description']=array(
+        '#type'=>'textarea',
+        '#title'=>t('Description'),
+        '#description' =>t('Terms separated by ","'),
+        '#rows'=>"1",
+        '#attributes'=>array(
+          'style'=>'resize: none;'
+          ),
+        '#default_value'=>$arg3description,
+      );
+    $form['and']['arg3']['arg3link']=array(
+        '#type'=>'textarea',
+        '#title'=>t('Link'),
+        '#description' =>t('Terms separated by ","'),
+        '#rows'=>"1",
+        '#attributes'=>array(
+          'style'=>'resize: none;'
+          ),
+        '#default_value'=>$arg3link,
+      );
+
+
+   /* $form['and']['arg1and']=array(
+        '#type'=>'textarea',
+       // '#title'=>'Enter arg1',
+        '#attributes' => array(
+          'style'=>'width: 100px;
+                    display: inline-block;
+                    float: left;
+                    display: inline-block;
+                    horizontal-align: left;
+                    padding: 5px;
+                    '
+          ),
+        '#default_value' => 'term1,term2,term3',
+    );
+    $form['and']['arg2and']=array(
+        '#type'=>'textarea',
+      //  '#title'=>'Enter arg2',
+         '#attributes' => array(
+          'style'=>'width: 100px ;
+                    float: center;
+                     display: inline-block;
+                    horizontal-align: center;
+                    padding: 5px;
+                    '
+          ),
+        '#default_value' => 'term4,term5',
+    );
+    $form['and']['arg3and']=array(
+        '#type'=>'textarea',
+      //  '#title'=>'Enter arg3',
+         '#attributes' => array(
+          'style'=>'width: 100px ;
+                    float: right;
+                     display: inline-block;
+                    horizontal-align: right;
+                    padding: 5px;
+                    '
+          ),
+        '#default_value' => 'term6',
+    );
+    $form['and']['where']=array(
+        '#type'=>'fieldset',
+        '#title'=>'Where',           
+    );
+    $form['and']['where']['descriptionand']=array(
+        '#type'=>'checkbox',
+        '#title'=>'description',
+        '#default_value'=>TRUE
+    );
+    $form['and']['where']['titleand']=array(
+        '#type'=>'checkbox',
+        '#title'=>'title',
+        '#default_value'=>TRUE        
+    );
+    $form['and']['where']['linkand']=array(
+        '#type'=>'checkbox',
+        '#title'=>'link',
+        '#default_value'=>False        
+    );
+    */
+
+    $form['and']['or']=array(
+        '#type'=>'fieldset',
+        '#title'=>'OR',
+        '#description' =>t('Both the terms and the text boxes are combined with OR.'),
+               '#attributes' => array(
+          'style'=>'border: 2px solid purple;
+            -moz-border-radius:8px;
+            -webkit-border-radius:8px;  
+            border-radius:8px;  
+                    '
+          ),
+        '#collapsible' => True,
+        '#collapsed' => $orcollapsed,
+    );
+    $form['and']['or']['ortitle']=array(
+        '#type'=>'textarea',
+        '#title'=>t('Title'),
+        '#rows'=>"1",
+        '#default_value'=>$ortitle,
+        '#attributes'=>array(
+          'style'=>'resize: none;'
+          ),
+        '#description' =>t('Terms separated by ","'),
+    );
+    
+    $form['and']['or']['ordescription']=array(
+        '#type'=>'textarea',
+        '#title'=>t('Description'),
+        '#rows'=>"1",
+        '#default_value'=>$ordescription,
+        '#attributes'=>array(
+          'style'=>'resize: none;'
+          ),
+        '#description' =>t('Terms separated by ","'),
+    );
+    $form['and']['or']['orlink']=array(
+        '#type'=>'textarea',
+        '#title'=>t('Link'),
+        '#rows'=>"1",
+        '#default_value'=>$orlink,
+        '#attributes'=>array(
+          'style'=>'resize: none;'
+          ),
+        '#description' => t('Terms separated by ","'),
+    );
+    $form['not']=array(
+        '#type'=>'fieldset',
+        '#title'=>"NOT",
+        '#description' => t('None of the terms will appear in the results'),
+               '#attributes' => array(
+          'style'=>'border: 2px solid #1c7800;
+            -moz-border-radius:8px;
+            -webkit-border-radius:8px;  
+            border-radius:8px;  
+                    '
+          ),
+        '#collapsible' => True,
+         '#collapsed' => $notcollapsed,
+    );
+    $form['not']['nottitle']=array(
+        '#type'=>'textarea',
+        '#title'=>t('Title'),
+        '#rows'=>"1",
+        '#default_value'=>$nottitle,
+        '#attributes'=>array(
+          'style'=>'resize: none;'
+          ),
+        '#description' =>t('Terms separated by ","'),
+    );
+    $form['not']['notdescription']=array(
+        '#type'=>'textarea',
+        '#title'=>t('Description'),
+        '#rows'=>"1",
+        '#default_value'=>$notdescription,
+        '#attributes'=>array(
+          'style'=>'resize: none;'
+          ),
+        '#description' => t('Terms separated by ","'),
+    );
+    $form['not']['notlink']=array(
+        '#type'=>'textarea',
+        '#title'=>t('Link'),
+        '#rows'=>"1",
+        '#default_value'=>$notlink,
+        '#attributes'=>array(
+          'style'=>'resize: none;'
+          ),
+        '#description' => t('Terms separated by ","'),
+    );
+    $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Filter'),
+    );
+    return $form;
+}
+
+function canal_json_filtrorss_crear_form_submit($form, &$form_state){
+   global $base_url;
+
+   $my_grupo=og_get_group_context();
+       if(!empty($my_grupo) && isset($my_grupo->nid)){
+           $grupo_link=$my_grupo->purl;
+       }
+
+
+    if($form_state['values']['url']){
+        $urls=$form_state['values']['url'];
+        $urla=explode(",",$urls);
+        for ($x=0;$x<count($urla);$x++){
+            $urlcoded[$x]=base64_encode($urla[$x]);
+            if($x==0){
+                $url=$urlcoded[$x];
+            }else{
+                $url.=','.$urlcoded[$x];
+            }            
+        }        
+    }
+
+//    if($form_state['values']['regular']==TRUE){
+      $reg=1;
+//    }else{
+//      $reg=0;
+//    }
+
+    if($form_state['values']['nottitle']){
+        $sep=explode(",",$form_state['values']['nottitle']);
+        for($x=0;$x<count($sep);$x++){
+            if(strpos($sep[$x], '+')==FALSE){
+                if($x==0 && !isset($not)){
+                    $not='/\b'.$sep[$x].'\b/iu_title';
+                }else{
+                    $not.=',/\b'.$sep[$x].'\b/iu_title';
+                }
+            }else{
+                if($x==0 && !isset($not)){
+                    $not='/\b'.$sep[$x].'/iu_title';
+                }else{
+                    $not.=',/\b'.$sep[$x].'/iu_title';
+                }
+            }
+        }
+    }
+    if($form_state['values']['notdescription']){
+        $sep=explode(",",$form_state['values']['notdescription']);
+        for($x=0;$x<count($sep);$x++){
+            if(strpos($sep[$x], '+')==FALSE){
+                if($x==0 && !isset($not)){
+                    $not='/\b'.$sep[$x].'\b/iu_description';
+                }else{
+                    $not.=',/\b'.$sep[$x].'\b/iu_description';
+                }
+            }else{
+                if($x==0 && !isset($not)){
+                    $not='/\b'.$sep[$x].'/iu_description';
+                }else{
+                    $not.=',/\b'.$sep[$x].'/iu_description';
+                }
+            }
+        }
+    }
+    if($form_state['values']['notlink']){
+        $sep=explode(",",$form_state['values']['notlink']);
+        for($x=0;$x<count($sep);$x++){
+            if(strpos($sep[$x], '+')==FALSE){
+                if($x==0 && !isset($not)){
+                    $not='/\b'.$sep[$x].'\b/iu_link';
+                }else{
+                    $not.=',/\b'.$sep[$x].'\b/iu_link';
+                }
+            }else{
+                if($x==0 && !isset($not)){
+                    $not='/\b'.$sep[$x].'/iu_link';
+                }else{
+                    $not.=',/\b'.$sep[$x].'/iu_link';
+                }
+            }
+        }
+    }
+    if($form_state['values']['ortitle']){
+        $sep=explode(",",$form_state['values']['ortitle']);
+        for($x=0;$x<count($sep);$x++){
+            if(strpos($sep[$x], '+')==FALSE){
+                if($x==0 && !isset($filtera)){
+                    $filtera='/\b'.$sep[$x].'\b/iu_title';
+                }else{
+                    $filtera.=',/\b'.$sep[$x].'\b/iu_title';
+                }
+            }else{
+                if($x==0 && !isset($filtera)){
+                    $filtera='/\b'.$sep[$x].'/iu_title';
+                }else{
+                    $filtera.=',/\b'.$sep[$x].'/iu_title';
+                }
+            }
+        }
+    }
+    if($form_state['values']['ordescription']){
+        $sep=explode(",",$form_state['values']['ordescription']);
+        for($x=0;$x<count($sep);$x++){
+            if(strpos($sep[$x], '+')==FALSE){
+                if($x==0 && !isset($filtera)){
+                    $filtera='/\b'.$sep[$x].'\b/iu_description';
+                }else{
+                    $filtera.=',/\b'.$sep[$x].'\b/iu_description';
+                }
+            }else{
+                if($x==0 && !isset($filtera)){
+                    $filtera='/\b'.$sep[$x].'/iu_description';
+                }else{
+                    $filtera.=',/\b'.$sep[$x].'/iu_description';
+                }
+            }
+        }
+    }
+    if($form_state['values']['orlink']){
+        $sep=explode(",",$form_state['values']['orlink']);
+        for($x=0;$x<count($sep);$x++){
+            if(strpos($sep[$x], '+')==FALSE){
+                if($x==0 && !isset($filtera)){
+                    $filtera='/\b'.$sep[$x].'\b/iu_link';
+                }else{
+                    $filtera.=',/\b'.$sep[$x].'\b/iu_link';
+                }
+            }else{
+                if($x==0 && !isset($filtera)){
+                    $filtera='/\b'.$sep[$x].'/iu_link';
+                }else{
+                    $filtera.=',/\b'.$sep[$x].'/iu_link';
+                }
+            }
+        }
+    }
+    if($form_state['values']['arg1title']){
+        $sep=explode(",",$form_state['values']['arg1title']);
+        for($x=0;$x<count($sep);$x++){
+            if(strpos($sep[$x],'+')==FALSE){
+                if($x==0 && !isset($and)){
+                    $and='/\b'.$sep[$x].'\b/iu_or1·title';
+                }else{
+                    $and.=',/\b'.$sep[$x].'\b/iu_or1·title';
+                }
+            }else{
+                if($x==0 && !isset($and)){
+                    $and='/\b'.$sep[$x].'/iu_or1·title';
+                }else{
+                    $and.=',/\b'.$sep[$x].'/iu_or1·title';
+                }
+            }
+        }
+    }
+    if($form_state['values']['arg1description']){
+        $sep=explode(",",$form_state['values']['arg1description']);
+        for($x=0;$x<count($sep);$x++){
+            if(strpos($sep[$x],'+')==FALSE){
+                if($x==0 && !isset($and)){
+                    $and='/\b'.$sep[$x].'\b/iu_or1·description';
+                }else{
+                    $and.=',/\b'.$sep[$x].'\b/iu_or1·description';
+                }
+            }else{
+                if($x==0 && !isset($and)){
+                    $and='/\b'.$sep[$x].'/iu_or1·description';
+                }else{
+                    $and.=',/\b'.$sep[$x].'/iu_or1·description';
+                }
+            }
+        }
+    }
+    if($form_state['values']['arg1link']){
+        $sep=explode(",",$form_state['values']['arg1link']);
+        for($x=0;$x<count($sep);$x++){
+            if(strpos($sep[$x],'+')==FALSE){
+                if($x==0 && !isset($and)){
+                    $and='/\b'.$sep[$x].'\b/iu_or1·link';
+                }else{
+                    $and.=',/\b'.$sep[$x].'\b/iu_or1·link';
+                }
+            }else{
+                if($x==0 && !isset($and)){
+                    $and='/\b'.$sep[$x].'/iu_or1·link';
+                }else{
+                    $and.=',/\b'.$sep[$x].'/iu_or1·link';
+                }
+            }
+        }
+    }
+    if($form_state['values']['arg2title']){
+        $sep=explode(",",$form_state['values']['arg2title']);
+        for($x=0;$x<count($sep);$x++){
+            if(strpos($sep[$x],'+')==FALSE){
+                if($x==0 && !isset($and)){
+                    $and='/\b'.$sep[$x].'\b/iu_or2·title';
+                }else{
+                    $and.=',/\b'.$sep[$x].'\b/iu_or2·title';
+                }
+            }else{
+                if($x==0 && !isset($and)){
+                    $and='/\b'.$sep[$x].'/iu_or2·title';
+                }else{
+                    $and.=',/\b'.$sep[$x].'/iu_or2·title';
+                }
+            }
+        }
+    }
+    if($form_state['values']['arg2description']){
+        $sep=explode(",",$form_state['values']['arg2description']);
+        for($x=0;$x<count($sep);$x++){
+            if(strpos($sep[$x],'+')==FALSE){
+                if($x==0 && !isset($and)){
+                    $and='/\b'.$sep[$x].'\b/iu_or2·description';
+                }else{
+                    $and.=',/\b'.$sep[$x].'\b/iu_or2·description';
+                }
+            }else{
+                if($x==0 && !isset($and)){
+                    $and='/\b'.$sep[$x].'/iu_or2·description';
+                }else{
+                    $and.=',/\b'.$sep[$x].'/iu_or2·description';
+                }
+            }
+        }
+    }
+    if($form_state['values']['arg2link']){
+        $sep=explode(",",$form_state['values']['arg2link']);
+        for($x=0;$x<count($sep);$x++){
+            if(strpos($sep[$x],'+')==FALSE){
+                if($x==0 && !isset($and)){
+                    $and='/\b'.$sep[$x].'\b/iu_or2·link';
+                }else{
+                    $and.=',/\b'.$sep[$x].'\b/iu_or2·link';
+                }
+            }else{
+                if($x==0 && !isset($and)){
+                    $and='/\b'.$sep[$x].'/iu_or2·link';
+                }else{
+                    $and.=',/\b'.$sep[$x].'/iu_or2·link';
+                }
+            }
+        }
+    }
+    if($form_state['values']['arg3title']){
+        $sep=explode(",",$form_state['values']['arg3title']);
+        for($x=0;$x<count($sep);$x++){
+            if(strpos($sep[$x],'+')==FALSE){
+                if($x==0 && !isset($and)){
+                    $and='/\b'.$sep[$x].'\b/iu_or3·title';
+                }else{
+                    $and.=',/\b'.$sep[$x].'\b/iu_or3·title';
+                }
+            }else{
+                if($x==0 && !isset($and)){
+                    $and='/\b'.$sep[$x].'/iu_or3·title';
+                }else{
+                    $and.=',/\b'.$sep[$x].'/iu_or3·title';
+                }
+            }
+        }
+    }
+    if($form_state['values']['arg3description']){
+        $sep=explode(",",$form_state['values']['arg3description']);
+        for($x=0;$x<count($sep);$x++){
+            if(strpos($sep[$x],'+')==FALSE){
+                if($x==0 && !isset($and)){
+                    $and='/\b'.$sep[$x].'\b/iu_or3·description';
+                }else{
+                    $and.=',/\b'.$sep[$x].'\b/iu_or3·description';
+                }
+            }else{
+                if($x==0 && !isset($and)){
+                    $and='/\b'.$sep[$x].'/iu_or3·description';
+                }else{
+                    $and.=',/\b'.$sep[$x].'/iu_or3·description';
+                }
+            }
+        }
+    }
+    if($form_state['values']['arg3link']){
+        $sep=explode(",",$form_state['values']['arg3link']);
+        for($x=0;$x<count($sep);$x++){
+            if(strpos($sep[$x],'+')==FALSE){
+                if($x==0 && !isset($and)){
+                    $and='/\b'.$sep[$x].'\b/iu_or3·link';
+                }else{
+                    $and.=',/\b'.$sep[$x].'\b/iu_or3·link';
+                }
+            }else{
+                if($x==0 && !isset($and)){
+                    $and='/\b'.$sep[$x].'/iu_or3·link';
+                }else{
+                    $and.=',/\b'.$sep[$x].'/iu_or3·link';
+                }
+            }
+        }
+    }
+
+
+/*    if($form_state['values']['arg1and']){
+        $and1=$form_state['values']['arg1and'];
+        $and1sep=explode(",", $and1);
+        for($x=0;$x<count($and1sep);$x++){
+            if($x==0){
+                $filter='((?=.*'.$and1sep[$x].')';
+            }else{
+                 $filter.='|(?=.*'.$and1sep[$x].')';
+            }
+            if(($x+1)==count($and1sep)){
+                $filter.=')';
+            }
+        }
+    } 
+    if($form_state['values']['arg2and']){
+        $and2=$form_state['values']['arg2and'];
+        $and2sep=explode(",", $and2);
+        for($x=0;$x<count($and2sep);$x++){
+            if($x==0){
+                $filter.='((?=.*'.$and2sep[$x].')';
+            }else{
+                 $filter.='|(?=.*'.$and2sep[$x].')';
+            }
+            if(($x+1)==count($and2sep)){
+                $filter.=')';
+            }
+        }
+    }
+    if($form_state['values']['arg3and']){
+        $and3=$form_state['values']['arg3and'];
+        $and3sep=explode(",", $and3);
+        for($x=0;$x<count($and3sep);$x++){
+            if($x==0){
+                $filter.='((?=.*'.$and3sep[$x].')';
+            }else{
+                 $filter.='|(?=.*'.$and3sep[$x].')';
+            }
+            if(($x+1)==count($and3sep)){
+                $filter.=')';
+            }
+        }
+    }  
+*/
+
+      if(isset($and)){
+          if (isset($filtera)){
+              if(isset($not)){
+                $and=base64_encode($and);
+                $not=base64_encode($not);
+                $filtera=base64_encode($filtera);
+              $url_filtrado='http://localhost/hontza/rssHontza/filter.php?url='.$url.'&filter='.$filtera.'&and='.$and.'&not='.$not.'&reg='.$reg;
+              $url_filter=base64_encode($url_filtrado);
+              }else{
+                $and=base64_encode($and);
+                $filtera=base64_encode($filtera);
+              $url_filtrado='http://localhost/hontza/rssHontza/filter.php?url='.$url.'&filter='.$filtera.'&and='.$and.'&reg='.$reg;
+              $url_filter=base64_encode($url_filtrado);
+              }
+          }else{
+              if(isset($not)){
+                $and=base64_encode($and);
+                $not=base64_encode($not);
+                $url_filtrado='http://localhost/hontza/rssHontza/filter.php?url='.$url.'&and='.$and.'&not='.$not.'&reg='.$reg;
+              $url_filter=base64_encode($url_filtrado);
+              }else{
+                $and=base64_encode($and);
+              $url_filtrado='http://localhost/hontza/rssHontza/filter.php?url='.$url.'&and='.$and.'&reg='.$reg;
+              $url_filter=base64_encode($url_filtrado);
+              }
+          }
+      }else{
+          if(isset($filtera)){
+            if(isset($not)){
+                $not=base64_encode($not);
+                $filtera=base64_encode($filtera);
+            $url_filtrado='http://localhost/hontza/rssHontza/filter.php?url='.$url.'&filter='.$filtera.'&not='.$not.'&reg='.$reg;
+            $url_filter=base64_encode($url_filtrado);
+            }else{
+              $filtera=base64_encode($filtera);
+            $url_filtrado='http://localhost/hontza/rssHontza/filter.php?url='.$url.'&filter='.$filtera.'&reg='.$reg;
+            $url_filter=base64_encode($url_filtrado);
+            }
+        }else{
+            if(isset($not)){
+                $not=base64_encode($not);
+            $url_filtrado='http://localhost/hontza/rssHontza/filter.php?url='.$url.'&not='.$not.'&reg='.$reg;
+            $url_filter=base64_encode($url_filtrado);
+            }else{
+            $url_filtrado='http://localhost/hontza/rssHontza/filter.php?url='.$url.'&reg='.$reg;
+            $url_filter=base64_encode($url_filtrado);
+            }
+        }
+      }
+
+
+     /* if(isset($filter)){
+
+        $filter='/'.$filter.'/i';
+        if($form_state['values']['descriptionand']==TRUE){
+            $filtera=$filter.'_description';
+        }
+        if($form_state['values']['titleand']==TRUE){
+            if($form_state['values']['descriptionand']==TRUE){
+                $filtera.=','.$filter.'_title';
+            }
+            
+        }
+        if($form_state['values']['linkand']==TRUE){
+          if($form_state['values']['descriptionand']==TRUE || $form_state['values']['descriptionand']==TRUE){
+                $filtera=','.$filter.'_link';
+            }
+            $filter=$filter.'_link';
+        }
+
+        if(isset($not)){
+            $url_filtrado='http://hound.hontza.es/rssHontza/filter.php?url='.$url.'&filter='.$filtera.'&not='.$not.'&reg='.$reg;
+            $url_filter=base64_encode($url_filtrado);
+        }else{
+            $url_filtrado='http://hound.hontza.es/rssHontza/filter.php?url='.$url.'&filter='.$filtera.'&reg='.$reg;
+            $url_filter=base64_encode($url_filtrado);
+        }    
+
+
+      }else{
+
+     
+        if(isset($not)){
+            $url_filtrado='http://hound.hontza.es/rssHontza/filter.php?url='.$url.'&filter='.$filtera.'&not='.$not.'&reg='.$reg;
+            $url_filter=base64_encode($url_filtrado);
+        }else{
+            $url_filtrado='http://hound.hontza.es/rssHontza/filter.php?url='.$url.'&filter='.$filtera.'&reg='.$reg;
+            $url_filter=base64_encode($url_filtrado);
+        }     
+      }
+      */  
+    if (strlen($url_filtrado)>4500){
+      $portzentaia=(strlen($url_filtrado)*100)/4500;
+      $portzentaia=$portzentaia-100;
+      $portzentaia=round($portzentaia);
+      $url_cod=base64_encode($form_state['values']['url']);
+
+      drupal_set_message(t('The length of your filter has exceeded the limit by %porcen%. Please delete several RSS or filter terms.',array('%porcen'=>$portzentaia)));
+      $url_contenido=$base_url.'/'.$grupo_link.'/canal_json/filtrorss?url='.$url_cod.'&arg1title='.$form_state['values']['arg1title'].'&arg2title='.$form_state['values']['arg2title'].'&arg3title='.$form_state['values']['arg3title'].'&arg1description='.$form_state['values']['arg1description'].'&arg2description='.$form_state['values']['arg2description'].'&arg3description='.$form_state['values']['arg3description'].'&arg1link='.$form_state['values']['arg1link'].'&arg2link='.$form_state['values']['arg2link'].'&arg3link='.$form_state['values']['arg3link'].'&ortitle='.$form_state['values']['ortitle'].'&ordescription='.$form_state['values']['ordescription'].'&orlink='.$form_state['values']['orlink'].'&nottitle='.$form_state['values']['nottitle'].'&notdescription='.$form_state['values']['notdescription'].'&notlink='.$form_state['values']['notlink'];
+
+      if(strlen($url_contenido)>7800){
+         $url_cod1=substr($url_cod,0,4000);
+         $url_contenido=$base_url.'/'.$grupo_link.'/canal_json/filtrorss?url='.$url_cod1.'&arg1title='.$form_state['values']['arg1title'].'&arg2title='.$form_state['values']['arg2title'].'&arg3title='.$form_state['values']['arg3title'].'&arg1description='.$form_state['values']['arg1description'].'&arg2description='.$form_state['values']['arg2description'].'&arg3description='.$form_state['values']['arg3description'].'&arg1link='.$form_state['values']['arg1link'].'&arg2link='.$form_state['values']['arg2link'].'&arg3link='.$form_state['values']['arg3link'].'&ortitle='.$form_state['values']['ortitle'].'&ordescription='.$form_state['values']['ordescription'].'&orlink='.$form_state['values']['orlink'].'&nottitle='.$form_state['values']['nottitle'].'&notdescription='.$form_state['values']['notdescription'].'&notlink='.$form_state['values']['notlink'];
+      drupal_set_message(t('Your RSS list has been automatically trimmed to the maximum processable length. Please edit your RSS list.'), 'error');
+      }
+
+     drupal_goto($url_contenido);
+     // drupal_goto($base_url.'/'.$grupo_link.'/canal_json/filtrorss?url='.$url_cod.'&arg1title='.$form_state['values']['arg1title'].'&arg2title='.$form_state['values']['arg2title'].'&arg3title='.$form_state['values']['arg3title'].'&arg1description='.$form_state['values']['arg1description'].'&arg2description='.$form_state['values']['arg2description'].'&arg3description='.$form_state['values']['arg3description'].'&arg1link='.$form_state['values']['arg1link'].'&arg2link='.$form_state['values']['arg2link'].'&arg3link='.$form_state['values']['arg3link'].'&ortitle='.$form_state['values']['ortitle'].'&ordescription='.$form_state['values']['ordescription'].'&orlink='.$form_state['values']['orlink'].'&nottitle='.$form_state['values']['nottitle'].'&notdescription='.$form_state['values']['notdescription'].'&notlink='.$form_state['values']['notlink']);
+    }else{
+      $urla=$base_url.'/'.$grupo_link.'/crear/canal-yql?simple=1&url_filter='.$url_filter;       
+      drupal_goto($urla);
+    }
+
+    
+    
+    //drupal_goto($url_filtrado);
+
+}
+function get_url_rss_filter(){
+    if($_GET['url_filter']!=null) {
+    $url_rss_filtera = $_GET['url_filter'];
+    $url_rss_filter = base64_decode($url_rss_filtera);
+    return $url_rss_filter;
+    }
+    return;
+}
+
+function canal_json_crear_form(){
+   $title=t('Url of Json');
+   $type=arg(1);
+   $url_type='json';
+   if($type=='crear_csv'){
+       $title=t('Url of Csv');
+       $url_type='csv';
+   }
+   $form['url_json']=array(
+       '#type'=>'textarea',
+       '#title'=>$title,
+       '#required'=>TRUE,
+   );
+   $separator_csv_options=canal_json_get_separator_csv_options();
+   if($url_type=='csv'){
+       $form['separator_csv']=array(
+       '#type'=>'select',
+       '#title'=>t('Separator'),    
+       '#options'=>$separator_csv_options,
+       '#required'=>TRUE,
+    );
+   }
+   $form['url_type']=array(
+       '#type'=>'hidden',
+       '#default_value'=>$url_type,
+   );
+   $form['import_btn']=array(
+       '#type'=>'submit',
+       '#value'=>t('Next'),
+   );
+   if($url_type=='csv'){
+       drupal_set_title('Import Csv');
+   }
+   return $form;
+}
+function canal_json_crear_access(){
+    if(!hontza_is_user_anonimo()){
+        return TRUE;
+    }
+    return FALSE;
+}
+function canal_json_crear_form_submit($form, &$form_state){
+    if($form_state['values']['url_json']){
+       $url_json=trim($form_state['values']['url_json']);
+       $type='previsualizar';
+       $separator_csv='';       
+       if($form_state['values']['url_type']=='csv'){
+           $type='previsualizar_csv';
+           $separator_csv='/'.$form_state['values']['separator_csv'];
+       }       
+       $url='canal_json/crear/'.$type;       
+       drupal_goto($url.'/'.base64_encode($url_json).$separator_csv);
+    }
+}
+function canal_json_crear_previsualizar_form(&$form_state,$content_info){
+    $url_json=arg(3);
+    $separator_csv=arg(4);
+    $options=array();
+    $options['']='';
+    $my_array=array_combine($content_info['fields'],$content_info['fields']);
+    $options=array_merge($options,$my_array);
+    $form['url_json']=array(
+       '#type'=>'hidden',
+       '#value'=>$url_json,
+    );
+    $type=arg(2);
+    $url_type='json';
+    if($type=='previsualizar_csv'){
+        $url_type='csv';
+    }
+    $form['url_type']=array(
+       '#type'=>'hidden',
+       '#default_value'=>$url_type,
+    );
+    $form['separator_csv']=array(
+       '#type'=>'hidden',
+       '#default_value'=>$separator_csv,
+    );
+    $form['fields_fieldset']=array(
+        '#type'=>'fieldset',
+        '#title'=>'Associating fields',
+    );
+    $form['fields_fieldset']['title_field']=array(        
+        '#type'=>'select',
+        '#title'=>t('Title'),
+        '#options'=>$options,
+        '#required'=>TRUE,
+    );
+    $form['fields_fieldset']['link_field']=array(        
+        '#type'=>'select',
+        '#title'=>t('Link'),
+        '#options'=>$options,
+        '#required'=>TRUE,
+    );
+    $form['fields_fieldset']['description_field']=array(        
+        '#type'=>'select',
+        '#title'=>t('Description'),
+        '#options'=>$options,
+        //'#required'=>TRUE,
+    );
+     $form['fields_fieldset']['numero_linea']=array(        
+        '#type'=>'textfield',
+        '#title'=>t('From this line (included)'),
+        //'#default_value'=>0,
+        '#default_value'=>1,
+        //'#required'=>TRUE,
+    );
+    $form['send_btn']=array(
+        '#type'=>'submit',
+        '#value'=>t('Next'),
+    );
+    if($url_type=='csv'){
+       drupal_set_title('Import Csv');
+    }
+    return $form;
+}    
+function canal_json_get_content_info($url,$separator_csv){    
+    $content_info=array();
+    $type=arg(2);
+        if($type=='previsualizar_csv'){
+            $result=canal_json_create_json_by_csv($url,'',$separator_csv);
+        }else{
+            //$url=urlencode($url);
+            $content=file_get_contents($url);            
+            $result=json_decode($content);
+            //intelsat-2017-json
+            $result=canal_json_fix_json_decode($result,$content);                           
+        }
+        if(canal_json_extractor_is_activado()){
+            $result=canal_json_extractor_get_result($result);
+        }
+
+        //intelsat-2017-json
+        $result=canal_json_fix_result($result);
+
+        if(isset($result->results)){
+            $html=array();
+            //$html[]='<fieldset>';
+            //$html[]='<div>';
+            $html[]='<table>';
+            foreach($result->results as $i=>$row){
+                    if(empty($i)){
+                        $content_info['fields']=array_keys((array) $row);
+                    }
+                    $html[]='<tr><td style="padding-top:10px;padding-bottom:10px;border: 1px solid #000000;">';
+                    $html[]='<div style="width:400px;overflow:auto;"><b>'.t('Number').'</b>:&nbsp;'.($i+1).'</div>'; 
+                    foreach($row as $field=>$value){
+                        if(is_array($value)){
+                            $my_value=$value[0];
+                        }else{
+                            $my_value=$value;
+                        }
+                        $html[]='<div class="div_canal_json_overflow"><b>'.$field.'</b>:&nbsp;'.$my_value.'</div>';                
+                    }
+                    $html[]='</td></tr>';
+            }
+            //$html[]='</div>';
+            $html[]='</table>';
+            //$html[]='</fieldset>';
+            $content_info['html']=implode('',$html);
+        }
+       
+    return $content_info;
+}
+function canal_json_crear_previsualizar_callback(){
+    $url_json=arg(3);
+    $separator_csv=arg(4);
+    $separator_csv=canal_json_get_separator_csv_value($separator_csv);
+    $url=base64_decode($url_json);
+    $content_info=canal_json_get_content_info($url,$separator_csv);
+    $output=drupal_get_form('canal_json_crear_previsualizar_form',$content_info);
+    $output.=$content_info['html'];
+    return $output;
+}
+function canal_json_crear_previsualizar_form_submit($form, &$form_state){
+    global $base_url,$language;
+    if($form_state['values']['url_json']){
+       $url_json=base64_decode($form_state['values']['url_json']);
+       $my_grupo=og_get_group_context();
+       if(!empty($my_grupo) && isset($my_grupo->nid)){
+           $grupo_link=$my_grupo->purl;
+       }
+       $json_fields=array();
+       $json_fields['title']=$form_state['values']['title_field'];
+       $json_fields['link']=$form_state['values']['link_field'];
+       $json_fields['description']=$form_state['values']['description_field'];
+       $json_fields['url_json']=$url_json;
+       $json_fields['url_type']=$form_state['values']['url_type'];
+       $json_fields['numero_linea']=$form_state['values']['numero_linea'];
+       $json_fields['separator_csv']=$form_state['values']['separator_csv'];
+       $url_json=base64_encode(json_encode($json_fields));
+       $my_lang='';
+       if($language->language!='en'){
+           $my_lang='/'.$language->language;
+       }
+       $url=url($base_url.$my_lang.'/'.$grupo_link.'/crear/canal-yql',array('query'=>'simple=1&url_json='.$url_json));       
+       drupal_goto($url);
+    }
+}
+function canal_canal_json_is_canal_json($source,&$json_fields){
+    $json_fields='';
+    $canal=node_load($source->feed_nid);
+    if(isset($canal->field_json_fields) && isset($canal->field_json_fields[0]) && isset($canal->field_json_fields[0]['value'])){
+        if(!empty($canal->field_json_fields[0]['value'])){
+            $json_fields=$canal->field_json_fields[0]['value'];
+            return 1;
+        }
+    }
+    return 0;
+}
+function canal_json_FeedsSyndicationParser(FeedsImportBatch &$batch, FeedsSource $source,$json_fields_in){
+    $config=$source->getConfig();
+    $url=$config['FeedsHTTPFetcher']['source'];
+    $content = $batch->getRaw();
+    $json_fields=canal_json_decode_json_fields($json_fields_in);
+    if(isset($json_fields->url_type) && $json_fields->url_type=='csv'){
+        $separator_csv=",";
+        if(isset($json_fields->separator_csv) && !empty($json_fields->separator_csv)){
+            $separator_csv=canal_json_get_separator_csv_value($json_fields->separator_csv);
+        }
+        //intelsat-2017-json                        
+        //$content=canal_json_create_json_by_csv($url,'',$separator_csv);
+        $my_content=canal_json_create_json_by_csv($url,'',$separator_csv);
+        //$content=canal_json_create_json_by_csv_string($content);
+    }else{
+        //intelsat-2017-json    
+        //$content=json_decode($content);
+        $my_content=json_decode($content);
+    }
+
+    //intelsat-2017-json
+    $content=canal_json_fix_json_decode($my_content,$content);
+
+    //$batch->title = $content->name;
+    //$batch->description = '';
+    //$batch->link = $content->url;
+    //$numero_linea=0;
+    if(canal_json_extractor_is_activado()){
+        $content=canal_json_extractor_get_result($content);
+    }
+
+    //intelsat-2017-json
+    $content=canal_json_fix_result($content);
+
+    $numero_linea=-1;
+    if(isset($json_fields->numero_linea) && !empty($json_fields->numero_linea) && is_numeric($json_fields->numero_linea)){
+        $numero_linea=$json_fields->numero_linea-1;
+    }
+    $item_array=array();
+    if(isset($content->results) && !empty($content->results)){
+        foreach($content->results as $i=>$result){
+                //if($i<=$numero_linea){
+                if($i<$numero_linea){    
+                    continue;
+                }
+                if(!empty($result)){
+                       $title='';
+                        $href='';
+                        $title=$result->{$json_fields->title};
+                        $link=$result->{$json_fields->link};
+                        $title_array=array();
+                        $link_array=array();
+                        if(is_array($title)){
+                           $title_array=$title;                            
+                        }else{
+                           $title_array[]=$title;                            
+                        }
+                        if(is_array($link)){
+                           $link_array=$link;                            
+                        }else{
+                           $link_array[]=$link;                            
+                        }
+                        foreach($title_array as $i=>$value){
+                            $link=$link_array[$i];
+                            if(!empty($value) && !empty($link)){
+                                $item=array();
+                                $item['title']=$value;
+                                $item['link']=$link;
+                                $item['guid']=$item['link'];
+                                $item['url']=$item['link'];
+                                $item['description']='';
+                                if(isset($result->{$json_fields->description}) && !empty($result->{$json_fields->description})){        
+                                    $description=$result->{$json_fields->description};
+                                    if(is_array($description)){
+                                        $description=$description[0];
+                                    }
+                                    $item['description']=$description;
+                                }
+                                //$batch->items[] =$item;
+                                $item_array[]=$item;
+                            }
+                        }    
+                }    
+        }
+        red_canal_array_reverse_item_array($item_array,$batch);
+    }
+}
+function canal_json_decode_json_fields($json_fields){
+    $result=base64_decode($json_fields);
+    $result=json_decode($result);
+    return $result;
+}
+function canal_json_is_pantalla(){
+    $param=arg(0);
+    if(!empty($param) && $param=='canal_json'){
+        return 1;
+    }
+    return 0;
+}
+function canal_json_canal_de_yql_node_form_alter(&$form,&$form_state, $form_id){
+    if(isset($form['field_json_fields'])){
+       unset($form['field_json_fields']); 
+    }
+}
+function canal_json_create_json_by_csv($url,$csv_array_in='',$separator_csv=''){
+    $result=new stdClass();
+    $result->results=array();
+    if(!empty($url)){
+        $csv_array=estrategia_get_lineas_csv($url,$separator_csv);
+    }else{
+        $csv_array=$csv_array_in;       
+    }
+    $my_kont=0; 
+    if(!empty($csv_array)){
+        foreach($csv_array as $i=>$row){
+            if(!empty($row)){
+                $result->results[$my_kont]=new stdClass();
+                foreach($row as $kont=>$value){
+                    $field='field'.$kont;
+                    $result->results[$my_kont]->{$field}=$value;
+                }
+                $my_kont++;
+            }
+        }
+    }  
+    return $result;
+}
+function canal_json_create_json_by_csv_string($content){       
+    $csv_array=array();
+    $my_array=explode("\n", $content);
+    foreach ($my_array as $i=>$linea) {
+      $row = str_getcsv($linea,",");
+      $csv_array[]=$row;              
+    }
+    return canal_json_create_json_by_csv('',$csv_array);
+}
+function canal_json_is_csv($url_json){
+    $json_fields=json_decode(base64_decode($_REQUEST['url_json']));
+    if(isset($json_fields->url_type) && !empty($json_fields->url_type)){
+        if($json_fields->url_type=='csv'){
+            return 1;
+        }
+    }
+    return 0;
+}
+function canal_json_get_separator_csv_options(){
+    $result=array();
+    $result[1]='Coma';
+    $result[2]='Tabulador';
+    $result[3]='Punto y coma';
+    return $result;
+}
+function canal_json_get_separator_csv_value($separator_csv){
+    $result=array();
+    $result[1]=",";
+    $result[2]="\t";
+    $result[3]=";";
+    if(isset($result[$separator_csv]) && !empty($result[$separator_csv])){
+        return $result[$separator_csv];
+    }
+    return '';
+}
+//intelsat-2017-json
+function canal_json_fix_result($result_in){
+  //echo print_r($result_in,1);exit();
+  if(isset($result_in->results)){
+    return $result_in;
+  }
+  $result=new stdClass();
+  $result->results=$result_in;
+  return $result;
+}
+//intelsat-2017-json
+function canal_json_fix_json_decode($result_in,$content){
+  if(!empty($result_in)){
+    return $result_in;
+  }
+  $result=new stdClass();  
+  $json_array=preg_split("/((\r?\n)|(\r\n?))/",$content);
+  if(!empty($json_array)){
+    foreach($json_array as $i=>$json){
+      if(!empty($json)){  
+        //print $json;exit();
+        $json_decode_value=json_decode($json);
+        /*echo print_r($json_decode_value,1);
+        exit();*/
+          if(!isset($result->results)){
+            $result->results=array();
+          }
+          $result->results[]=$json_decode_value;
+      }    
+    }
+  }
+  return $result;
+}
