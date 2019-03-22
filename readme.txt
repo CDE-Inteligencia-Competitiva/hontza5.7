@@ -2,7 +2,7 @@ CLAVES DE LA INSTALACIÓN:
 
 Para poder hacer la correcta instalación de hontza lo recomendable es seguir estos pasos.
 
-1) Una vez descomprimido el archivo zip, copia la carpeta hontza-5.7 en el directorio /home de tu servidor o maquina donde vas a ejecutar la herramienta. 
+1) Una vez descomprimido el archivo zip, copia la carpeta hontza5.7-master en el directorio /home de tu servidor o maquina donde vas a ejecutar la herramienta. 
 
 2) Si no encuentras la posibilidad traspasar la carpeta correspondiente al directorio /home, siempre tienes la posibilidad de poder descargarlo utilizando el comando wget con la dirección http://www.hontza.es/wordpress/wp-content/uploads/2019/03/hontza-5.7.zip .
 
