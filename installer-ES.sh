@@ -627,7 +627,7 @@ WEBROOT='/var/www/html'
 WEBFOLDER='hontza'
 DBUSER_F='mysuser'
 DBROOT_F='myroot'
-TOMCAT_VERSION='7.0.93'
+TOMCAT_VERSION='7.0.94'
 
 
 #set +e
