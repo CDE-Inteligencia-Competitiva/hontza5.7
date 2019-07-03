@@ -2,7 +2,9 @@ CLAVES DE LA INSTALACIÓN:
 
 Para poder hacer la correcta instalación de hontza lo recomendable es seguir estos pasos.
 
-1) Una vez descomprimido el archivo zip, copia la carpeta hontza5.7-master en el directorio /home de tu servidor o maquina donde vas a ejecutar la herramienta. 
+Si deseas instalar Hontza en un ordenador con sistema operativo Windows, lo recomendable es instalar primero una máquina virtual con servidor Linux y luego instalar Hontza en dicha máquina virtual. Para más explicaciones, por favor lee este artículo: https://www.genbeta.com/paso-a-paso/como-crear-una-maquina-virtual-en-windows-para-ejecutar-linux.
+
+1) Una vez descomprimido el archivo zip, copia la carpeta hontza5.7-master en el directorio /home de tu servidor o maquina virtual donde vas a ejecutar la herramienta. 
 
 2) Si no encuentras la posibilidad traspasar la carpeta correspondiente al directorio /home, siempre tienes la posibilidad de poder descargarlo utilizando el comando wget con la dirección http://www.hontza.es/wordpress/wp-content/uploads/2019/03/hontza-5.7.zip .
 
@@ -27,15 +29,3 @@ Username: admin
 password: hontza
 
 7) entrar en la url [url_hacia_la_herramienta]/hontza/admin/settings/file-system y asegurar que el file system path esta definido. Si no lo estuviera, poner alguna carpeta de confianza (también se recomienda poner el sites/default/files ).
-
-
-
-
-
-
-
- 
-
-
-
-
