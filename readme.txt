@@ -9,7 +9,7 @@ https://www.dropbox.com/s/nkl5wmvrkefl2uu/ubuntu16_installation.webm?dl=0
 
 1) Una vez descomprimido el archivo zip, copia la carpeta hontza5.7-master en el directorio /home de tu servidor o maquina virtual donde vas a ejecutar la herramienta. 
 
-2) Si no encuentras la posibilidad traspasar la carpeta correspondiente al directorio /home, siempre tienes la posibilidad de poder descargarlo utilizando el comando wget con la dirección http://www.hontza.es/wordpress/wp-content/uploads/2019/03/hontza-5.7.zip .
+2) Si no encuentras la posibilidad traspasar la carpeta correspondiente al directorio /home, siempre tienes la posibilidad de poder descargarlo utilizando el comando wget con la dirección http://www.hontza.es/wordpress/wp-content/uploads/2019/08/hontza-5.7.zip .
 
 3) Una vez que la carpeta esté en /home, ejecutamos como root el archivo installer-ES.sh mediante el comando bash.
 
